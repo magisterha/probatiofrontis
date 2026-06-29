@@ -12,7 +12,7 @@
             --text-color: #333;
         }
         body {
-            font-family: 'Georgia', serif; /* Tipografía clásica para latín */
+            font-family: 'Georgia', serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             max-width: 800px;
@@ -34,6 +34,7 @@
             gap: 15px;
             align-items: center;
             justify-content: center;
+            flex-wrap: wrap;
         }
         select, button {
             padding: 10px 15px;
@@ -59,7 +60,6 @@
             font-size: 1.2em;
             min-height: 200px;
         }
-        /* Estilo para ocultar la densidad: las palabras son clicables */
         .latin-word {
             cursor: pointer;
             transition: color 0.2s;
@@ -75,7 +75,7 @@
             background-color: #e8f4f8;
             border-left: 4px solid #3498db;
             border-radius: 0 5px 5px 0;
-            display: none; /* Oculto por defecto para no saturar */
+            display: none;
             font-size: 0.9em;
         }
         .loading {
@@ -98,7 +98,7 @@
             <option value="1">Capitulum I</option>
             <option value="2">Capitulum II</option>
             <option value="3">Capitulum III</option>
-            </select>
+        </select>
         <button id="generate-btn">Generar Práctica (3-5 Oraciones)</button>
     </div>
 
@@ -124,7 +124,6 @@
         const wordTitle = document.getElementById('word-title');
         const wordContext = document.getElementById('word-context');
 
-        // 1. Generar la sesión de práctica (Control de volumen y anclaje al RAG)
         generateBtn.addEventListener('click', async () => {
             const capitulum = capitulumSelect.value;
             statusMsg.textContent = "Consultando el corpus de LLPSI...";
@@ -133,8 +132,9 @@
             analysisPanel.style.display = 'none';
 
             try {
-                // Petición al backend vía Cloudflare
-                /* const response = await fetch(`${CLOUDFLARE_API_URL}/generate`, {
+                // Cuando conectes tu backend real, descomenta estas líneas:
+                /*
+                const response = await fetch(`${CLOUDFLARE_API_URL}/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ capitulum: capitulum })
@@ -161,44 +161,41 @@
             }
         });
 
-        // 2. Renderizar oraciones separando cada palabra (Reducción de densidad)
         function renderSentences(sentences) {
             sentences.forEach(sentence => {
                 const p = document.createElement('p');
-                
-                // Dividir la oración en palabras para hacerlas clicables
-                const words = sentence.split(/(\s+|\b)/).filter(w => w.trim().length > 0 && /\w/.test(w));
-                const punctuation = sentence.split(/\w+/).filter(p => p.trim().length > 0);
 
-                let punctIndex = 0;
-                
-                words.forEach((word) => {
-                    const span = document.createElement('span');
-                    span.textContent = word;
-                    span.className = 'latin-word';
-                    // Evento para activar la "intuición/análisis" bajo demanda
-                    span.addEventListener('click', () => analyzeWord(word, capitulumSelect.value));
-                    p.appendChild(span);
-                    p.appendChild(document.createTextNode(' '));
+                // Tokeniza la oración respetando palabras, puntuación y espacios
+                const tokens = sentence.match(/[A-Za-zÀ-ÿ0-9_]+|[^\w\s]+|\s+/g) || [];
+
+                tokens.forEach(token => {
+                    if (/^\s+$/.test(token)) {
+                        // Espacio: se añade tal cual
+                        p.appendChild(document.createTextNode(token));
+                    } else if (/^\w+$/.test(token)) {
+                        // Palabra latina: clickeable
+                        const span = document.createElement('span');
+                        span.textContent = token;
+                        span.className = 'latin-word';
+                        span.addEventListener('click', () => analyzeWord(token, capitulumSelect.value));
+                        p.appendChild(span);
+                    } else {
+                        // Puntuación: se añade directamente
+                        p.appendChild(document.createTextNode(token));
+                    }
                 });
 
-                // Añadir signos de puntuación rudimentarios para el mock
-                if (punctuation.length > 1) {
-                    p.appendChild(document.createTextNode(punctuation[punctuation.length - 1]));
-                }
-                
                 sentencesContainer.appendChild(p);
             });
         }
 
-        // 3. Obtener contexto cultural/gramatical específico de la palabra (Fomentar la 感覺)
         async function analyzeWord(word, capitulum) {
             analysisPanel.style.display = 'block';
             wordTitle.textContent = `Analizando: ${word}...`;
             wordContext.textContent = "Obteniendo conexión sensorial y morfológica...";
 
             try {
-                // Petición al backend vía Cloudflare
+                // Cuando conectes tu backend real, descomenta estas líneas:
                 /*
                 const response = await fetch(`${CLOUDFLARE_API_URL}/analyze`, {
                     method: 'POST',
